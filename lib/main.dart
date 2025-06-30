@@ -1,9 +1,10 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'package:flutter/foundation.dart'; // required for kIsWeb
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'auth_screen.dart';
 import 'fundi_dashboard.dart';
-
 
 const firebaseConfig = FirebaseOptions(
   apiKey: "AIzaSyCTPMaf1vi11KpTqaGBdkNPa4gEufljTb4",
@@ -16,9 +17,17 @@ const firebaseConfig = FirebaseOptions(
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(); // Load the .env variables
 
   if (kIsWeb) {
-    await Firebase.initializeApp(options: firebaseConfig); // ← for Chrome
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: dotenv.env['API_KEY']!,
+        appId: dotenv.env['APP_ID']!,
+        projectId: dotenv.env['PROJECT_ID']!,
+        messagingSenderId: dotenv.env['MESSAGING_SENDER_ID']!,
+      ),
+    );
   } else {
     await Firebase.initializeApp(); // ← for Android later
   }
