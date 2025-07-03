@@ -14,3 +14,17 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## Features
+
+- Modernized fundi profile page UI with improved layout, avatar, and action buttons
+- WhatsApp button uses the official FontAwesome icon for a modern look
+- Specialization and reviews are clearly displayed on the profile page
+
+## Dependencies
+
+This project uses the following additional package:
+
+- [font_awesome_flutter](https://pub.dev/packages/font_awesome_flutter) (for modern WhatsApp and other icons)
+
+Run `flutter pub get` after cloning or updating to install all dependencies.
