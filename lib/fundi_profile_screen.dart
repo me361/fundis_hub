@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'payment_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class FundiProfileScreen extends StatelessWidget {
   final String fundiId;
   final String name;
   final bool available;
   final String phoneNumber;
+  final String? specialization;
 
   const FundiProfileScreen({
     super.key,
@@ -15,6 +17,7 @@ class FundiProfileScreen extends StatelessWidget {
     required this.name,
     required this.available,
     required this.phoneNumber,
+    this.specialization,
   });
 
   Future<void> _launchCall(BuildContext context) async {
@@ -42,28 +45,98 @@ class FundiProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(name)),
+      appBar: AppBar(
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.teal,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Availability: ${available ? "Available" : "Busy"}'),
-            Text('Phone: $phoneNumber'),
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.call, color: Colors.green),
-                  onPressed: () => _launchCall(context),
+            Center(
+              child: Card(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                elevation: 8,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.teal[100],
+                        child: Icon(Icons.account_circle, color: Colors.teal[700], size: 60),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        name,
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.teal),
+                      ),
+                      if (specialization != null && specialization!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(
+                            specialization!,
+                            style: const TextStyle(fontSize: 16, color: Colors.teal),
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            available ? Icons.check_circle : Icons.cancel,
+                            color: available ? Colors.green : Colors.red,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            available ? 'Available' : 'Busy',
+                            style: TextStyle(
+                              color: available ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text('Phone: $phoneNumber', style: const TextStyle(fontSize: 15)),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.teal,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            ),
+                            icon: const Icon(Icons.call, color: Colors.white, size: 20),
+                            label: const Text('Call'),
+                            onPressed: () => _launchCall(context),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            ),
+                            icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.white, size: 20),
+                            label: const Text('WhatsApp'),
+                            onPressed: () => _launchWhatsApp(context),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.message, color: Colors.green),
-                  onPressed: () => _launchWhatsApp(context),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 20),
-            const Text('Ratings:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            const Text('Ratings & Reviews:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.teal)),
+            const SizedBox(height: 8),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
@@ -73,10 +146,10 @@ class FundiProfileScreen extends StatelessWidget {
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
-                    return Text('Error: ${snapshot.error}');
+                    return Text('Error: [31m${snapshot.error}[0m');
                   }
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
+                    return const Center(child: CircularProgressIndicator());
                   }
                   final reviews = snapshot.data?.docs ?? [];
                   if (reviews.isEmpty) {
@@ -91,8 +164,14 @@ class FundiProfileScreen extends StatelessWidget {
                       final comment = data['comment'] ?? '';
                       return Card(
                         margin: const EdgeInsets.only(bottom: 10),
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         child: ListTile(
-                          title: Text('⭐ $rating - $user'),
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.teal[50],
+                            child: Text('⭐ $rating', style: const TextStyle(fontSize: 16)),
+                          ),
+                          title: Text(user, style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text(comment),
                         ),
                       );
@@ -107,6 +186,12 @@ class FundiProfileScreen extends StatelessWidget {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(20),
         child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orange,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           onPressed: () {
             Navigator.push(
               context,

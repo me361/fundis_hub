@@ -115,8 +115,11 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Welcome, [4m${user?.email ?? 'Guest'}![0m',
-              style: const TextStyle(fontSize: 18),
+              'Welcome, ${user?.email ?? 'Guest'}!',
+              style: const TextStyle(
+                fontSize: 18,
+                color:Colors.black,
+                ),
             ),
             ElevatedButton(
               onPressed: () {

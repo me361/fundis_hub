@@ -40,7 +40,9 @@ dependencies:
   url_launcher: ^6.2.6
   font_awesome_flutter: ^10.7.0
   flutter_dotenv: ^5.2.1
-
+  google_maps_flutter: ^2.10.0
+  geolocator: ^10.0.0
+  google_fonts: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -94,3 +96,6 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+  assets:
+    - .env

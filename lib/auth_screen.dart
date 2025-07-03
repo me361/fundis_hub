@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'home_screen.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'client_home_screen.dart';
+import 'fundi_dashboard.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -18,6 +19,8 @@ class _AuthScreenState extends State<AuthScreen> {
   bool isLogin = true;
   String errorMessage = '';
   bool isLoading = false;
+  String selectedRole = 'client';
+  String selectedSpecialization = 'Plumber'; // default
 
   void toggleMode() {
     setState(() {
@@ -31,17 +34,68 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       if (isLogin) {
         await _auth.signInWithEmailAndPassword(
-            email: emailController.text.trim(),
-            password: passwordController.text.trim());
+          email: emailController.text.trim(),
+          password: passwordController.text.trim(),
+        );
+
+        // After login, check user role
+        final uid = _auth.currentUser!.uid;
+        final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+        if (doc.exists && doc['role'] == 'fundi') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => FundiDashboard()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => ClientHomeScreen()),
+          );
+        }
       } else {
         await _auth.createUserWithEmailAndPassword(
-            email: emailController.text.trim(),
-            password: passwordController.text.trim());
-      }
-      Navigator.push(
-        context, 
-        MaterialPageRoute(builder: (context) => HomeScreen())
+          email: emailController.text.trim(),
+          password: passwordController.text.trim(),
         );
+
+        // Store user info in Firestore
+        final role = selectedRole; // from the dropdown
+        final specialization = selectedSpecialization;
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(_auth.currentUser!.uid)
+            .set({
+          'email': emailController.text.trim(),
+          'role': role,
+          if (role == 'fundi') 'specialization': specialization,
+        });
+
+        // If registering as fundi, also add to 'fundis' collection
+        if (role == 'fundi') {
+          await FirebaseFirestore.instance
+              .collection('fundis')
+              .doc(_auth.currentUser!.uid)
+              .set({
+            'email': emailController.text.trim(),
+            'specialization': specialization,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
+
+        // After registration, check role and navigate
+        if (role == 'fundi') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => FundiDashboard()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => ClientHomeScreen()),
+          );
+        }
+      }
     } on FirebaseAuthException catch (e) {
       setState(() => errorMessage = e.message ?? 'Authentication error');
     } finally {
@@ -72,6 +126,51 @@ class _AuthScreenState extends State<AuthScreen> {
               obscureText: true,
             ),
             const SizedBox(height: 16),
+
+            // Role Dropdown (only show on Register)
+            if (!isLogin)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Select Role:'),
+                  DropdownButton<String>(
+                    value: selectedRole,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedRole = value!;
+                      });
+                    },
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'client',
+                        child: Text('Client'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'fundi',
+                        child: Text('Fundi'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (selectedRole == 'fundi')
+                    DropdownButtonFormField<String>(
+                      value: selectedSpecialization,
+                      decoration: const InputDecoration(labelText: 'Specialization'),
+                      items: ['Plumber', 'Electrician', 'Carpenter', 'Painter', 'Technician']
+                          .map((spec) => DropdownMenuItem(
+                                value: spec,
+                                child: Text(spec),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedSpecialization = value!;
+                        });
+                      },
+                    ),
+                  const SizedBox(height: 16),
+                ],
+              ),
 
             // Error message
             if (errorMessage.isNotEmpty)
